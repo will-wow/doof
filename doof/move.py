@@ -1,11 +1,10 @@
 import pantilthat
 import numpy
 
-# Field of view
-X_DEGREES = 62 // 4
-Y_DEGREES = 48 // 4
+# Max degrees the camera can turn
 MAX_DEGREES = 80
-MIN_DEGREE_MOVE = 8
+# Max degrees the camera should turn in a frame
+MAX_MOVE_SPEED = 10
 
 
 def normalize_coordinates(frame, x, y):
@@ -16,12 +15,13 @@ def normalize_coordinates(frame, x, y):
 
 
 def coordinates_to_degrees(x, y):
-    return (int(x * 2.5), int(y * 2.5))
+    # Moves more slowly the closer the face is to the center.
+    return (x * MAX_MOVE_SPEED, y * MAX_MOVE_SPEED)
 
 
-def move_camera(pan, tilt):
-    pantilthat.pan(pan)
-    pantilthat.tilt(tilt)
+
+def clamp(value):
+    return numpy.clip(int(value), -MAX_DEGREES, MAX_DEGREES)
 
 
 def get_position():
@@ -29,61 +29,43 @@ def get_position():
     tilt = pantilthat.get_tilt()
     return (pan, tilt)
 
+def set_camera(direction, degrees):
+    degrees = clamp(degrees)
 
-def smooth_out_change(old_value, new_value):
-    if abs(old_value - new_value) < MIN_DEGREE_MOVE:
-        return old_value
-    else:
-        return new_value
+    if direction == "pan":
+        pantilthat.pan(degrees)
+    elif direction == "tilt":
+        pantilthat.tilt(degrees)
 
+def move_camera(pan, tilt):
+    set_camera("pan", pan)
+    set_camera("tilt", tilt)
 
-def clamp(value):
-    return numpy.clip(value, -MAX_DEGREES, MAX_DEGREES)
+def change_pan(degrees):
+    set_camera("pan", pantilthat.get_pan() + degrees)
 
+def chagne_tilt(degrees):
+    set_camera("tilt", pantilthat.get_tilt() + degrees)
+
+def change_camera(x, y):
+    change_pan(x)
+    change_tilt(y)
 
 def move_towards(frame, shapes):
     if len(shapes) == 0:
         return frame
 
+    # Use first shape
     (left_x, left_y, w, h) = shapes[0]
+    # Get center
     (x, y) = (left_x + w / 2, left_y + h / 2)
     (x, y) = normalize_coordinates(frame, x, y)
     (x, y) = coordinates_to_degrees(x, y)
 
-    (pan, tilt) = get_position()
-
-    new_pan = clamp(pan + x)
-    new_tilt = clamp(tilt + y)
-
-    print({
-        "pan": pan,
-        "tilt": tilt,
-        "new_pan": new_pan,
-        "new_tilt": new_tilt,
-        "x": x,
-        "y": y
-    })
-
-    new_pan = smooth_out_change(pan, new_pan)
-    new_tilt = smooth_out_change(tilt, new_tilt)
-
-    move_camera(new_pan, new_tilt)
+    # Move camera
+    change_camera(x, y)
 
 
 def reset_position():
     move_camera(0, -45)
 
-
-def move_tick(direction):
-    if direction == "top":
-        value = clamp(pantilthat.get_tilt() - 5)
-        pantilthat.tilt(value)
-    elif direction == "left":
-        value = clamp(pantilthat.get_pan() - 5)
-        pantilthat.pan(value)
-    if direction == "bottom":
-        value = clamp(pantilthat.get_tilt() + 5)
-        pantilthat.tilt(value)
-    elif direction == "left":
-        value = clamp(pantilthat.get_pan() + 5)
-        pantilthat.pan(value)

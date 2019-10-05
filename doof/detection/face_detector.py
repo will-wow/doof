@@ -21,10 +21,8 @@ def simplify_image(frame):
 
 def detect_faces(frame):
     frame_gray = simplify_image(frame)
-    return FACE_CASCADE.detectMultiScale(frame_gray,
-                                         scaleFactor=1.2,
-                                         minNeighbors=4,
-                                         minSize=(20, 20))
+    return FACE_CASCADE.detectMultiScale(frame_gray, scaleFactor=1.1, minNeighbors=3)                                        
+
 
 
 def highlight_faces(frame, faces):
