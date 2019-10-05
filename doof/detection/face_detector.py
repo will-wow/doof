@@ -20,11 +20,15 @@ def simplify_image(frame):
 
 def detect_faces(frame):
     frame_gray = simplify_image(frame)
-    return FACE_CASCADE.detectMultiScale(frame_gray)
+    return FACE_CASCADE.detectMultiScale(
+        frame_gray,
+        scaleFactor=1.2,
+        minNeighbors=4
+    )
 
 def highlight_faces(frame, faces):
     for (x,y,w,h) in faces:
-        center = (x + w//2, y + h//2)
+        center = (x + w // 2, y + h // 2)
         # Draw face circles
         frame = cv2.ellipse(frame, center, (w//2, h//2), 0, 0, 360, (255, 0, 255), 4)
 

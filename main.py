@@ -6,6 +6,7 @@ import threading
 import cv2
 
 from doof.brain import Brain 
+from doof.move import move_tick 
 
 # ==========
 # Brain
@@ -58,10 +59,16 @@ def generate():
 def index():
     # return the rendered template
     return render_template("index.html")
+
 @app.route("/video_feed")
 def video_feed():
     return Response(generate(),
                     mimetype = "multipart/x-mixed-replace; boundary=frame")
+
+@app.route("/move", methods=["POST"])
+def move_camera():
+    direction = request.args.get('direction')
+    move_tick(direction)
 
 
 # ==========
