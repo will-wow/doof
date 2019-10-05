@@ -1,5 +1,3 @@
-# import the necessary packages
-from pyimagesearch.motion_detection import SingleMotionDetector
 from imutils.video import VideoStream
 from flask import Response
 from flask import Flask
@@ -12,6 +10,14 @@ import time
 import cv2
 import pantilthat
 
+face_cascade = "data/haarcascade_frontalface_default.xml"
+face_cascade_alt = "data/haarcascade_frontalface_alt.xml"
+smile_cascade = "data/haarcascade_smile.xml"
+FACE_CASCADE = cv2.CascadeClassifier()
+
+if not FACE_CASCADE.load(face_cascade):
+    print('--(!)Error loading face cascade')
+    exit(0)
 
 # initialize the output frame and a lock used to ensure thread-safe
 # exchanges of the output frames (useful when multiple browsers/tabs
@@ -32,82 +38,72 @@ def index():
     # return the rendered template
     return render_template("index.html")
 
-def detect_motion(frameCount):
+def detect_motion():
     # grab global references to the video stream, output frame, and
     # lock variables
     global vs, outputFrame, lock
 
-
     pantilthat.pan(0)
-    pantilthat.tilt(0)
-
-    # initialize the motion detector and the total number of frames
-    # read thus far
-    md = SingleMotionDetector(accumWeight=0.1)
-    total = 0
+    pantilthat.tilt(-45)
 
     while True:
         # read the next frame, resize smaller, grayscale and blur (less noise)
         frame = vs.read()
-        frame = imutils.resize(frame, width=400)
-        frame = cv2.flip(frame, 0)
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        gray = cv2.GaussianBlur(gray, (7, 7), 0)
+        frame = shrink_image(frame)
 
-        # grab the timestamp and draw it on the frame
-        timestamp = datetime.datetime.now()
-        cv2.putText(
-            frame,
-            timestamp.strftime("%A %d %B %Y %I:%M:%S%p"),
-            (10, frame.shape[0] - 10),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.35,
-            (0, 0, 255),
-            1
-        )
-
-        # If there are enough frames to do detection
-        if total > frameCount:
-            motion = md.detect(gray)
-
-            if motion is not None:
-                # Destructure data
-                (thresh, (minX, minY, maxX, maxY)) = motion
-                # Draw box
-                cv2.rectangle(frame, (minX, minY), (maxX, maxY),
-                              (0, 0, 255), 2)
-
-                height, width, _ = frame.shape
-                midX = width / 2
-                midY = height / 2
-                x = ((maxX + minX) / 2)
-                y = ((maxY + minY) / 2)
-                move(
-                    (x - midX) / midX,
-                    (y - midY) / midY
-                )
-
-        # update the model
-        md.update(gray)
-        total += 1
+        frame = detect_faces(frame)
 
         with lock:
             outputFrame = frame.copy()
 
-def move(x, y):
-    if x > 10:
+def shrink_image(frame):
+    frame = imutils.resize(frame, width=400)
+    frame = cv2.flip(frame, 0)
+    return frame
+
+def simplify_image(frame):
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    gray = cv2.equalizeHist(gray)
+    return gray
+
+def detect_faces(frame):
+    frame_gray = simplify_image(frame)
+    faces = FACE_CASCADE.detectMultiScale(frame_gray)
+    for (x,y,w,h) in faces:
+        center = (x + w//2, y + h//2)
+        # Draw face circles
+        frame = cv2.ellipse(frame, center, (w//2, h//2), 0, 0, 360, (255, 0, 255), 4)
+        # Move towards face
+        move_towards(frame, center[0], center[1])
+
+    return frame
+
+def normalize_coordinates(frame, x, y):
+    height, width, _ = frame.shape
+    midX = width / 2
+    midY = height / 2
+    return (
+        (x - midX) / midX,
+        (y - midY) / midY
+    )
+
+
+def move_towards(frame, x, y):
+    (x, y) = normalize_coordinates(frame, x, y)
+
+    if x > 0.1:
         pan = pantilthat.get_pan()
         if pan <= 80:
             pantilthat.pan(pan + 5)
-    if x < 10:
+    if x < -0.1:
         pan = pantilthat.get_pan()
         if pan >= -80:
             pantilthat.pan(pan - 5)
-    if y > 10:
+    if y > 0.1:
         tilt = pantilthat.get_tilt()
         if tilt <= 80:
             pantilthat.tilt(tilt + 5)
-    if x < 10:
+    if x < -0.1:
         tilt = pantilthat.get_tilt()
         if tilt >= -80:
             pantilthat.tilt(tilt - 5)
@@ -139,7 +135,7 @@ def video_feed():
 if __name__ == '__main__':
     # construct the argument parser and parse command line arguments
     ap = argparse.ArgumentParser()
-    ap.add_argument("-i", "--ip", type=str, required=True,
+    ap.add_argument("-i", "--ip", type=str, default="0.0.0.0",
         help="ip address of the device")
     ap.add_argument("-o", "--port", type=int, default=8000,
         help="ephemeral port number of the server (1024 to 65535)")
@@ -148,8 +144,7 @@ if __name__ == '__main__':
     args = vars(ap.parse_args())
 
     # start a thread that will perform motion detection
-    t = threading.Thread(target=detect_motion, args=(
-        args["frame_count"],))
+    t = threading.Thread(target=detect_motion)
     t.daemon = True
     t.start()
 
