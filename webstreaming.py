@@ -41,3 +41,45 @@ def detect_motion(frameCount):
     md = SingleMotionDetector(accumWeight=0.1)
     total = 0
 
+    while True
+        # read the next frame, resize smaller, grayscale and blur (less noise)
+        frame = vs.read()
+        frame = imutils.resize(frame, width=400)
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        gray = cv2.GaussianBlur(gray, (7, 7), 0)
+
+        # grab the timestamp and draw it on the frame
+        timestamp = datetime.datetime.now()
+        cv2.putText(
+            frame,
+            timestamp.strftime("%A %d %B %Y %I:%M:%S%p"),
+            (10, frame.shape[0] - 10),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.35,
+            (0, 0, 255),
+            1
+        )
+
+        # If there are enough frames to do detection
+        if total > frameCount:
+            motion = md.detect(gray)
+
+            if motion is not None:
+                # Destructure data
+                (thresh, (minX, minY, maxX, maxY)) = motion
+                # Draw box
+                cv2.rectangle(frame, (mixX, minY), (maxX, maxY),
+                              (0, 0, 255), 2)
+
+            # update the model
+            md.update(gray)
+            total += 1
+
+            with lock:
+                outputFrame = frame.copy()
+
+
+        
+        
+
+
