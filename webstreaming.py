@@ -10,6 +10,7 @@ import datetime
 import imutils
 import time
 import cv2
+import pantilthat
 
 
 # initialize the output frame and a lock used to ensure thread-safe
@@ -35,6 +36,10 @@ def detect_motion(frameCount):
     # grab global references to the video stream, output frame, and
     # lock variables
     global vs, outputFrame, lock
+
+
+    pantilthat.pan(0)
+    pantilthat.tilt(0)
 
     # initialize the motion detector and the total number of frames
     # read thus far
@@ -72,12 +77,40 @@ def detect_motion(frameCount):
                 cv2.rectangle(frame, (minX, minY), (maxX, maxY),
                               (0, 0, 255), 2)
 
+                height, width, _ = frame.shape
+                midX = width / 2
+                midY = height / 2
+                x = ((maxX + minX) / 2)
+                y = ((maxY + minY) / 2)
+                move(
+                    (x - midX) / midX,
+                    (y - midY) / midY
+                )
+
         # update the model
         md.update(gray)
         total += 1
 
         with lock:
             outputFrame = frame.copy()
+
+def move(x, y):
+    if x > 10:
+        pan = pantilthat.get_pan()
+        if pan <= 80:
+            pantilthat.pan(pan + 5)
+    if x < 10:
+        pan = pantilthat.get_pan()
+        if pan >= -80:
+            pantilthat.pan(pan - 5)
+    if y > 10:
+        tilt = pantilthat.get_tilt()
+        if tilt <= 80:
+            pantilthat.tilt(tilt + 5)
+    if x < 10:
+        tilt = pantilthat.get_tilt()
+        if tilt >= -80:
+            pantilthat.tilt(tilt - 5)
 
 def generate():
     global outputFrame, lock
