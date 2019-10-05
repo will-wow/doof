@@ -45,6 +45,7 @@ def detect_motion(frameCount):
         # read the next frame, resize smaller, grayscale and blur (less noise)
         frame = vs.read()
         frame = imutils.resize(frame, width=400)
+        frame = cv2.flip(frame, 0)
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         gray = cv2.GaussianBlur(gray, (7, 7), 0)
 
@@ -68,22 +69,21 @@ def detect_motion(frameCount):
                 # Destructure data
                 (thresh, (minX, minY, maxX, maxY)) = motion
                 # Draw box
-                cv2.rectangle(frame, (mixX, minY), (maxX, maxY),
+                cv2.rectangle(frame, (minX, minY), (maxX, maxY),
                               (0, 0, 255), 2)
 
-            # update the model
-            md.update(gray)
-            total += 1
+        # update the model
+        md.update(gray)
+        total += 1
 
-            with lock:
-                outputFrame = frame.copy()
+        with lock:
+            outputFrame = frame.copy()
 
 def generate():
     global outputFrame, lock
 
     while True:
         with lock:
-            print(outputFrame)
             if outputFrame is None:
                 continue
 
