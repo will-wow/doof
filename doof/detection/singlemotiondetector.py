@@ -2,7 +2,8 @@
 import numpy as np
 import imutils
 import cv2
- 
+
+
 class SingleMotionDetector:
     def __init__(self, accumWeight=0.5):
         # store the accumulated weight factor
@@ -32,7 +33,7 @@ class SingleMotionDetector:
         # find contours in the thresholded image and initialize the
         # minimum and maximum bounding box regions for motion
         cnts = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL,
-            cv2.CHAIN_APPROX_SIMPLE)
+                                cv2.CHAIN_APPROX_SIMPLE)
         cnts = imutils.grab_contours(cnts)
         (minX, minY) = (np.inf, np.inf)
         (maxX, maxY) = (-np.inf, -np.inf)
@@ -52,4 +53,3 @@ class SingleMotionDetector:
         # otherwise, return a tuple of the thresholded image along
         # with bounding box
         return (thresh, (minX, minY, maxX, maxY))
-

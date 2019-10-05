@@ -5,8 +5,8 @@ from flask import render_template
 import threading
 import cv2
 
-from doof.brain import Brain 
-from doof.move import move_tick 
+from doof.brain import Brain
+from doof.move import move_tick
 
 # ==========
 # Brain
@@ -15,8 +15,10 @@ from doof.move import move_tick
 vs = VideoStream(usePiCamera=1).start()
 brain = Brain(vs)
 
+
 def start_brain():
     brain.run()
+
 
 # ==========
 # Web Server
@@ -24,10 +26,11 @@ def start_brain():
 
 IP = "0.0.0.0"
 PORT = 8000
-DEBUG=True
+DEBUG = True
 
 # initialize a flask object
 app = Flask(__name__)
+
 
 def generate_frame():
     with brain.lock:
@@ -42,17 +45,19 @@ def generate_frame():
         if not flag:
             return None
 
-    return(b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' +
-              bytearray(encodedImage) + b'\r\n')
+    return (b'--frame\r\n'
+            b'Content-Type: image/jpeg\r\n\r\n' + bytearray(encodedImage) +
+            b'\r\n')
+
 
 def generate():
     while True:
         data = generate_frame()
-        
+
         if data is None:
             continue
 
-        yield(data)
+        yield (data)
 
 
 @app.route("/")
@@ -60,10 +65,12 @@ def index():
     # return the rendered template
     return render_template("index.html")
 
+
 @app.route("/video_feed")
 def video_feed():
     return Response(generate(),
-                    mimetype = "multipart/x-mixed-replace; boundary=frame")
+                    mimetype="multipart/x-mixed-replace; boundary=frame")
+
 
 @app.route("/move", methods=["POST"])
 def move_camera():
@@ -83,9 +90,7 @@ if __name__ == '__main__':
     t.start()
 
     # start the flask app
-    app.run(host=IP, port=PORT, debug=DEBUG,
-        threaded=True, use_reloader=False)
+    app.run(host=IP, port=PORT, debug=DEBUG, threaded=True, use_reloader=False)
 
 # release the video stream pointer
 vs.stop()
-

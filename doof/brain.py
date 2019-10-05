@@ -14,10 +14,12 @@ outputFrame = None
 lock = threading.Lock()
 searching = False
 
+
 def shrink_image(frame):
     frame = imutils.resize(frame, width=400)
     frame = cv2.flip(frame, 0)
     return frame
+
 
 class Brain:
     def __init__(self, video_stream):
@@ -48,4 +50,3 @@ class Brain:
             # Save the output in a lock, so this doesn't happen while serving a frame
             with self.lock:
                 self.outputFrame = frame.copy()
-
