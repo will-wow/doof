@@ -39,7 +39,7 @@ class SingleMotionDetector:
 
         # if no contours were found, return None
         if len(cnts) == 0:
-        return None
+            return None
 
         # otherwise, loop over the contours
         for c in cnts:
@@ -52,3 +52,4 @@ class SingleMotionDetector:
         # otherwise, return a tuple of the thresholded image along
         # with bounding box
         return (thresh, (minX, minY, maxX, maxY))
+
