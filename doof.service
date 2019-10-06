@@ -1,0 +1,11 @@
+[Unit]
+Description=Doof Service
+After=multi-user.target
+
+[Service]
+Type=idle
+ExecStart=/usr/bin/python3 /home/pi/repos/doof/main.py > /home/pi/doof.log 2>&1
+
+[Install]
+WantedBy=multi-user.target
+

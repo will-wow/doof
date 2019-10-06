@@ -1,2 +1,4 @@
 opencv-contrib-python-headless
 picamera
+flask
+imutils
