@@ -6,14 +6,15 @@ import threading
 import cv2
 
 from doof.brain import Brain
+from doof.move import Move
 
 # ==========
 # Brain
 # ==========
 
 vs = VideoStream(usePiCamera=1).start()
-brain = Brain(vs)
-
+move = Move()
+brain = Brain(video_stream=vs, move=move)
 
 def start_brain():
     brain.run()
