@@ -7,6 +7,9 @@ MAX_DEGREES = 80
 # Max degrees the camera should turn in a frame
 MAX_MOVE_SPEED = 10
 
+# Seconds it probably takes to do a move
+MOVE_TIME = 2
+
 def normalize_coordinates(frame, x, y):
     height, width, _ = frame.shape
     midX = width / 2
@@ -27,7 +30,7 @@ class Move:
     def __init__(self, pantilthat=pantilthat):
         self.pantilthat = pantilthat
 
-        self.last_move = None
+        self.last_move = time.time()
 
 
     def get_position(self):
@@ -46,7 +49,7 @@ class Move:
         self.last_move = time.time()
 
     def is_moving(self):
-        self.last_move < time.time() - 1
+        return self.last_move > time.time() - MOVE_TIME
 
     def move_camera(self, pan, tilt):
         self.set_camera("pan", pan)
@@ -62,12 +65,9 @@ class Move:
         self.change_pan(x)
         self.change_tilt(y)
 
-    def move_towards(self, frame, shapes):
-        if len(shapes) == 0:
-            return frame
-
+    def move_towards(self, frame, shape):
         # Use first shape
-        (left_x, left_y, w, h) = shapes[0]
+        (left_x, left_y, w, h) = shape
         # Get center
         (x, y) = (left_x + w / 2, left_y + h / 2)
         (x, y) = normalize_coordinates(frame, x, y)
