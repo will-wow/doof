@@ -3,9 +3,9 @@ import numpy as np
 import imutils
 import cv2
 
-face_cascade = "data/haarcascade_frontalface_default.xml"
-face_cascade_alt = "data/haarcascade_frontalface_alt.xml"
-smile_cascade = "data/haarcascade_smile.xml"
+face_cascade = "/home/pi/repos/doof/data/haarcascade_frontalface_default.xml"
+face_cascade_alt = "/home/pi/repos/doof/data/haarcascade_frontalface_alt.xml"
+smile_cascade = "/home/pi/repos/doof/data/haarcascade_smile.xml"
 FACE_CASCADE = cv2.CascadeClassifier()
 
 if not FACE_CASCADE.load(face_cascade):
