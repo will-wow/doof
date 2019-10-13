@@ -7,8 +7,8 @@ MAX_DEGREES = 80
 # Max degrees the camera should turn in a frame
 MAX_MOVE_SPEED = 10
 
-# Seconds it probably takes to do a move
-MOVE_TIME = 2
+# Time to do any move
+MOVE_TIME = 0.5
 
 def normalize_coordinates(frame, x, y):
     height, width, _ = frame.shape
@@ -27,43 +27,42 @@ def clamp(value):
 
 
 class Move:
-    def __init__(self, pantilthat=pantilthat):
+    def __init__(self, pantilthat=pantilthat, md=None):
         self.pantilthat = pantilthat
+        self.md = md
 
-        self.last_move = time.time()
+        self.move_complete_at = time.time()
+        
+        self.pan = self.pantilthat.get_pan()
+        self.tilt = self.pantilthat.get_tilt()
 
 
-    def get_position(self):
-        pan = self.pantilthat.get_pan()
-        tilt = self.pantilthat.get_tilt()
-        return (pan, tilt)
+    def get_both(self):
+        return (self.pan, self.tilt)
 
-    def set_camera(self, direction, degrees):
-        degrees = clamp(degrees)
-
+    def get_one(self, direction):
         if direction == "pan":
-            self.pantilthat.pan(degrees)
-        elif direction == "tilt":
-            self.pantilthat.tilt(degrees)
+            return self.pan
+        else:
+            return self.tilt
 
-        self.last_move = time.time()
+    def move_one(self, direction, degrees):
+        self.move_complete_at = time.time() + MOVE_TIME
+        self.md.reset()
 
-    def is_moving(self):
-        return self.last_move > time.time() - MOVE_TIME
+        return self._set_one(direction, degrees)
 
-    def move_camera(self, pan, tilt):
-        self.set_camera("pan", pan)
-        self.set_camera("tilt", tilt)
+    def move_both(self, pan, tilt):
+        self.move_complete_at = time.time() + MOVE_TIME
+        self.md.reset()
 
-    def change_pan(self, degrees):
-        self.set_camera("pan", self.pantilthat.get_pan() + degrees)
+        return self._set_both(pan, tilt)
 
-    def change_tilt(self, degrees):
-        self.set_camera("tilt", self.pantilthat.get_tilt() + degrees)
+    def change_one(self, direction, degrees):
+        return self.move_one(direction, self.get_one(direction) + degrees)
 
-    def change_camera(self, x, y):
-        self.change_pan(x)
-        self.change_tilt(y)
+    def change_both(self, pan, tilt):
+        return self.move_both(self.pan + pan, self.tilt + tilt)
 
     def move_towards(self, frame, shape):
         # Use first shape
@@ -74,9 +73,33 @@ class Move:
         (x, y) = coordinates_to_degrees(x, y)
 
         # Move camera
-        self.change_camera(x, y)
-
+        return self.change_both(x, y)
 
     def reset_position(self):
-        self.move_camera(0, -45)
+        self.move_both(0, -45)
+
+    def is_moving(self):
+        return self.move_complete_at >= time.time()
+
+    def _set_one(self, direction, degrees):
+        degrees = int(degrees)
+
+        # Return false if can't move anymore
+        if degrees < -MAX_DEGREES:
+            return False
+        if degrees > MAX_DEGREES:
+            return False
+
+        if direction == "pan":
+            self.pan = degrees
+            self.pantilthat.pan(degrees)
+        elif direction == "tilt":
+            self.tilt = degrees
+            self.pantilthat.tilt(degrees)
+
+        return True
+
+    def _set_both(self, pan, tilt):
+        self._set_one("pan", pan)
+        self._set_one("tilt", tilt)
 

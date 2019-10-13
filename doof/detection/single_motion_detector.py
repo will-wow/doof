@@ -6,7 +6,7 @@ import cv2
 # A weight factor
 ACCUM_WEIGHT = 0.1
 # Minimum frames to do a change detection
-MIN_FRAME_COUNT = 32
+MIN_FRAME_COUNT = 8
 # Threshold for detecting movement
 THRESHOLD = 25
 
@@ -39,13 +39,17 @@ class SingleMotionDetector:
         self.bg = None
         self.frame_count = 0
 
-    def detect_bop(self, frame, moving):
+    def reset(self):
+        self.frame_count = 0
+        self.bg = None
+
+    def detect_bop(self, frame):
         gray = simplify_image(frame)
 
         bopped = False
 
         # Look for a bop
-        if not moving and self.frame_count >= MIN_FRAME_COUNT:
+        if self.frame_count >= MIN_FRAME_COUNT:
             motion = self.detect(gray)
 
             if motion is not None:
