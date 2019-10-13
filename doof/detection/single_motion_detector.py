@@ -6,7 +6,7 @@ import cv2
 # A weight factor
 ACCUM_WEIGHT = 0.1
 # Minimum frames to do a change detection
-MIN_FRAME_COUNT = 8
+MIN_FRAME_COUNT = 2
 # Threshold for detecting movement
 THRESHOLD = 25
 

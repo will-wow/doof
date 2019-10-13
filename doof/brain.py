@@ -56,8 +56,8 @@ class Brain:
 
         if found:
             self.move.move_towards(frame, faces[0])
-        # else:
-        #     self.search.search()
+        else:
+            self.search.search()
 
 
         return (frame, found)
